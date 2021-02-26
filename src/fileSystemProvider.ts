@@ -4,8 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 
+import { writeFileSync } from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { extensionPath } from './extension';
+const request = require('request-promise').defaults({ encoding: null });
 
 export class File implements vscode.FileStat {
 
@@ -69,7 +72,17 @@ export class MemFS implements vscode.FileSystemProvider {
 
     // --- manage file contents
 
-    readFile(uri: vscode.Uri): Uint8Array {
+    async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+        if (uri.path === '/remoteImage.png') {
+            // Use this remote image as the file data
+            const remoteImageUrl = 'https://avatars.githubusercontent.com/u/6154722';
+            return await request.get(remoteImageUrl).then((body: any) => {
+                // Save a copy of the remote image to verify it's a valid PNG
+                writeFileSync(path.join(extensionPath, 'resources', 'downloadedImage.png'), body);
+                return body;
+            });
+        }
+
         const data = this._lookupAsFile(uri, false).data;
         if (data) {
             return data;
